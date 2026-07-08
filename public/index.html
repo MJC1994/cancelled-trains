@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">can 
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cancelled Trains Viewer</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="header">
+    <div class="header-inner">
+      <div>
+        <h1>Cancelled Trains Viewer</h1>
+        <p class="subtitle">Live cancelled services with journey details</p>
+      </div>
+      <div class="controls">
+        <label for="limit-select">Show</label>
+        <select id="limit-select" aria-label="Number of trains to load">
+          <option value="50" selected>50</option>
+          <option value="100">100</option>
+          <option value="250">250</option>
+          <option value="500">500</option>
+        </select>
+        <button id="refresh-btn" type="button">Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section id="summary" class="summary" aria-live="polite">
+      <div class="summary-loading">Loading cancelled trains…</div>
+    </section>
+
+    <section id="progress" class="progress hidden" aria-live="polite">
+      <div class="progress-bar">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+      <p id="progress-text" class="progress-text"></p>
+    </section>
+
+    <section id="error" class="error hidden" role="alert"></section>
+
+    <section id="trains" class="trains"></section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

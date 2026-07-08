@@ -1,0 +1,12 @@
+{
+  "name": "cancelled-trains-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "View cancelled trains with Southeastern departure board details",
+  "scripts": {
+    "start": "netlify dev"
+  },
+  "devDependencies": {
+    "netlify-cli": "^23.0.0"
+  }
+}

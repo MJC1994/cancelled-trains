@@ -1,0 +1,19 @@
+[build]
+  publish = "public"
+
+[dev]
+  framework = "#static"
+  publish = "public"
+  port = 8888
+
+[[redirects]]
+  from = "/api/cancelled"
+  to = "https://find-my-train-production.up.railway.app/api/debug/cancelled"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/service/*"
+  to = "https://api.southeasternrailway.co.uk/departure-boards/service/:splat"
+  status = 200
+  force = true
