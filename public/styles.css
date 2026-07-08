@@ -66,6 +66,16 @@ h1 {
   font-size: 0.9rem;
 }
 
+.filter-status {
+  margin-bottom: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.filter-status.hidden {
+  display: none;
+}
+
 select,
 button {
   font: inherit;

@@ -1,11 +1,13 @@
 const CONCURRENCY = 8;
 
 const limitSelect = document.getElementById('limit-select');
+const operatorSelect = document.getElementById('operator-select');
 const refreshBtn = document.getElementById('refresh-btn');
 const summaryEl = document.getElementById('summary');
 const progressEl = document.getElementById('progress');
 const progressFill = document.getElementById('progress-fill');
 const progressText = document.getElementById('progress-text');
+const filterStatusEl = document.getElementById('filter-status');
 const errorEl = document.getElementById('error');
 const trainsEl = document.getElementById('trains');
 
@@ -16,8 +18,10 @@ const timeFormatter = new Intl.DateTimeFormat('en-GB', {
 });
 
 let loadToken = 0;
+let knownOperators = new Set();
 
 limitSelect.addEventListener('change', () => loadTrains());
+operatorSelect.addEventListener('change', () => applyOperatorFilter());
 refreshBtn.addEventListener('click', () => loadTrains());
 
 loadTrains();
@@ -27,6 +31,11 @@ async function loadTrains() {
   const limit = limitSelect.value;
 
   refreshBtn.disabled = true;
+  operatorSelect.disabled = true;
+  knownOperators = new Set();
+  rebuildOperatorSelect();
+  filterStatusEl.classList.add('hidden');
+  filterStatusEl.textContent = '';
   errorEl.classList.add('hidden');
   errorEl.textContent = '';
   trainsEl.innerHTML = '';
@@ -72,6 +81,7 @@ async function loadTrains() {
 
     if (token === loadToken && enriched.every(Boolean)) {
       reorderTrainCards(services, enriched, cards, data.date);
+      applyOperatorFilter();
     }
   } catch (err) {
     if (token !== loadToken) return;
@@ -81,6 +91,7 @@ async function loadTrains() {
   } finally {
     if (token === loadToken) {
       refreshBtn.disabled = false;
+      operatorSelect.disabled = knownOperators.size === 0;
     }
   }
 }
@@ -114,6 +125,7 @@ function createTrainCard(service) {
   const card = document.createElement('article');
   card.className = 'train-card';
   card.dataset.rid = service.rid;
+  card.dataset.operator = service.toc || '';
 
   const departure = getDepartureTime(service, null);
   const reason = getCancelReason(service, null);
@@ -158,6 +170,10 @@ function updateTrainCard(card, service, result) {
 
   const board = result.ok ? result.data : null;
   const cancelledCount = getCancelledStopCount(service, board);
+  const operator = getOperator(service, board);
+
+  card.dataset.operator = operator;
+  noteOperator(operator);
 
   badge.classList.remove('loading');
   if (result.ok) {
@@ -184,6 +200,10 @@ function updateTrainCard(card, service, result) {
   }
 
   detailsEl.innerHTML = renderDetails(service, board, result);
+
+  if (operatorSelect.value) {
+    applyOperatorFilter();
+  }
 }
 
 function renderDetails(service, board, result) {
@@ -335,6 +355,61 @@ function getCancelReason(service, board) {
     board?.delayReason ||
     (service.cancelReason ? `Reason code: ${service.cancelReason}` : null)
   );
+}
+
+function getOperator(service, board) {
+  return board?.operator || service.toc || 'Unknown';
+}
+
+function noteOperator(operator) {
+  if (!operator || knownOperators.has(operator)) return;
+  knownOperators.add(operator);
+  rebuildOperatorSelect();
+  operatorSelect.disabled = false;
+}
+
+function rebuildOperatorSelect() {
+  const current = operatorSelect.value;
+  const operators = [...knownOperators].sort((a, b) => a.localeCompare(b));
+
+  operatorSelect.innerHTML = '<option value="">All operators</option>' +
+    operators.map((operator) => `<option value="${escapeHtml(operator)}">${escapeHtml(operator)}</option>`).join('');
+
+  if (operators.includes(current)) {
+    operatorSelect.value = current;
+  }
+}
+
+function applyOperatorFilter() {
+  const selected = operatorSelect.value;
+  const cards = [...trainsEl.querySelectorAll('.train-card')];
+  let visible = 0;
+
+  cards.forEach((card) => {
+    const match = !selected || card.dataset.operator === selected;
+    card.classList.toggle('hidden', !match);
+    if (match) visible += 1;
+  });
+
+  if (selected) {
+    filterStatusEl.textContent = `Showing ${visible} ${visible === 1 ? 'journey' : 'journeys'} for ${selected}`;
+    filterStatusEl.classList.remove('hidden');
+  } else {
+    filterStatusEl.classList.add('hidden');
+    filterStatusEl.textContent = '';
+  }
+
+  const emptyMessage = trainsEl.querySelector('.filter-empty');
+  if (selected && visible === 0 && cards.length > 0) {
+    if (!emptyMessage) {
+      const el = document.createElement('p');
+      el.className = 'summary-note filter-empty';
+      el.textContent = `No cancelled journeys found for ${selected}.`;
+      trainsEl.appendChild(el);
+    }
+  } else if (emptyMessage) {
+    emptyMessage.remove();
+  }
 }
 
 function getCancelledStopCount(service, board) {

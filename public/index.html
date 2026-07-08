@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">can 
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +14,10 @@
         <p class="subtitle">Live cancelled services with journey details</p>
       </div>
       <div class="controls">
+        <label for="operator-select">Operator</label>
+        <select id="operator-select" aria-label="Filter by operator">
+          <option value="">All operators</option>
+        </select>
         <label for="limit-select">Show</label>
         <select id="limit-select" aria-label="Number of trains to load">
           <option value="50" selected>50</option>
@@ -37,6 +41,8 @@
       </div>
       <p id="progress-text" class="progress-text"></p>
     </section>
+
+    <section id="filter-status" class="filter-status hidden" aria-live="polite"></section>
 
     <section id="error" class="error hidden" role="alert"></section>
 
