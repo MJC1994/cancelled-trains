@@ -1,4 +1,5 @@
 const CONCURRENCY = 8;
+const LDB_WIDGET_URL = 'https://widgets.otrl.io/tsa-widget/';
 
 const limitSelect = document.getElementById('limit-select');
 const operatorSelect = document.getElementById('operator-select');
@@ -136,6 +137,7 @@ function createTrainCard(service) {
         <div class="train-top-row">
           <div class="route">${escapeHtml(service.origin || '?')} → ${escapeHtml(service.destination || '?')}</div>
           <div class="train-top-actions">
+            <a class="ldb-link" href="${escapeHtml(getLdbUrl(service.rid))}" target="_blank" rel="noopener noreferrer">View in LDB</a>
             <span class="badge loading">Loading journey…</span>
             <span class="expand-icon" aria-hidden="true">▾</span>
           </div>
@@ -151,6 +153,9 @@ function createTrainCard(service) {
 
   const summaryBtn = card.querySelector('.train-summary');
   const detailsEl = card.querySelector('.train-details');
+  const ldbLink = card.querySelector('.ldb-link');
+
+  ldbLink.addEventListener('click', (event) => event.stopPropagation());
 
   summaryBtn.addEventListener('click', () => {
     const expanded = summaryBtn.getAttribute('aria-expanded') === 'true';
@@ -359,6 +364,10 @@ function getCancelReason(service, board) {
 
 function getOperator(service, board) {
   return board?.operator || service.toc || 'Unknown';
+}
+
+function getLdbUrl(rid) {
+  return `${LDB_WIDGET_URL}?rid=${encodeURIComponent(rid)}`;
 }
 
 function noteOperator(operator) {
