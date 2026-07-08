@@ -12,12 +12,6 @@ const filterStatusEl = document.getElementById('filter-status');
 const errorEl = document.getElementById('error');
 const trainsEl = document.getElementById('trains');
 
-const timeFormatter = new Intl.DateTimeFormat('en-GB', {
-  hour: '2-digit',
-  minute: '2-digit',
-  timeZone: 'Europe/London',
-});
-
 let loadToken = 0;
 let knownOperators = new Set();
 
@@ -323,17 +317,51 @@ function getDepartureTime(service, board) {
 function getDepartureSortMs(service, board, dateStr) {
   const boardDep = board?.locations?.find((loc) => loc.std)?.std;
   if (boardDep) {
-    const ms = Date.parse(boardDep);
-    if (!Number.isNaN(ms)) return ms;
+    return parseApiWallClockMs(boardDep);
   }
 
   const stopDep = service.cancelledStops?.find((s) => s.scheduledDeparture)?.scheduledDeparture;
   if (stopDep && dateStr) {
-    const ms = Date.parse(`${dateStr}T${stopDep}:00`);
-    if (!Number.isNaN(ms)) return ms;
+    return parseApiWallClockMs(`${dateStr}T${stopDep}:00`);
   }
 
   return Infinity;
+}
+
+function parseApiWallClockMs(value) {
+  const parts = parseApiWallClock(value);
+  if (!parts) return NaN;
+
+  const { year, month, day, hour, minute } = parts;
+  return Date.UTC(year, month - 1, day, hour, minute);
+}
+
+function parseApiWallClock(value) {
+  if (!value) return null;
+
+  const isoMatch = String(value).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (isoMatch) {
+    return {
+      year: Number(isoMatch[1]),
+      month: Number(isoMatch[2]),
+      day: Number(isoMatch[3]),
+      hour: Number(isoMatch[4]),
+      minute: Number(isoMatch[5]),
+    };
+  }
+
+  const timeMatch = String(value).match(/^(\d{2}):(\d{2})$/);
+  if (timeMatch) {
+    return {
+      year: 0,
+      month: 0,
+      day: 0,
+      hour: Number(timeMatch[1]),
+      minute: Number(timeMatch[2]),
+    };
+  }
+
+  return null;
 }
 
 function sortServicesByDeparture(services, dateStr) {
@@ -431,12 +459,13 @@ function getCancelledStopCount(service, board) {
 
 function formatTime(value) {
   if (!value) return '—';
-  if (/^\d{2}:\d{2}$/.test(value)) return value;
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
+  const parts = parseApiWallClock(value);
+  if (parts) {
+    return `${String(parts.hour).padStart(2, '0')}:${String(parts.minute).padStart(2, '0')}`;
+  }
 
-  return timeFormatter.format(date);
+  return String(value);
 }
 
 function updateProgress(loaded, total) {
